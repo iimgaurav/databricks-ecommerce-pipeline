@@ -8,12 +8,11 @@ HOW TO RUN:
     pytest tests/unit/test_silver_transformations.py -v
 """
 
-import pytest
 from src.silver.transformations import (
-    clean_orders,
-    clean_order_items,
-    clean_customers,
     aggregate_payments,
+    clean_customers,
+    clean_order_items,
+    clean_orders,
 )
 from src.utils.helpers import add_audit_columns
 

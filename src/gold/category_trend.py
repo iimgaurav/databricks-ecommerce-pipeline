@@ -6,7 +6,9 @@ Business question: "Which categories are growing fastest this month vs last?"
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import (
-    col, lag, round as spark_round,
+    col,
+    lag,
+    round as spark_round,
 )
 from pyspark.sql.window import Window
 

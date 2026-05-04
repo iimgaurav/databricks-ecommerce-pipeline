@@ -15,10 +15,10 @@ Without validators, a pipeline might:
 With validators, you FAIL FAST and alert the on-call engineer.
 """
 
-from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql.functions import col, count, when, max as spark_max
-from typing import List, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, max as spark_max
 
 from src.config.settings import PipelineConfig
 from src.utils.helpers import get_logger
@@ -30,7 +30,7 @@ def validate_table_exists(
     spark: SparkSession,
     full_table_name: str,
     min_rows: int = 100,
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """
     Check that a table exists and has at least `min_rows` rows.
 
@@ -52,9 +52,9 @@ def validate_table_exists(
 def validate_no_critical_nulls(
     spark: SparkSession,
     full_table_name: str,
-    columns: List[str],
+    columns: list[str],
     max_null_pct: float = 0.0,
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """
     Check that critical columns don't exceed the null threshold.
 
@@ -88,7 +88,7 @@ def validate_freshness(
     full_table_name: str,
     timestamp_column: str,
     max_staleness_hours: int = 48,
-) -> Tuple[bool, str]:
+) -> tuple[bool, str]:
     """
     Check that the latest data isn't too old.
     Catches scenarios where the source feed silently stopped.

@@ -14,14 +14,11 @@ them in Git gives you the same benefit.
 """
 
 from pyspark.sql.types import (
-    StructType,
-    StructField,
-    StringType,
-    IntegerType,
     DoubleType,
-    TimestampType,
-    BooleanType,
-    LongType,
+    IntegerType,
+    StringType,
+    StructField,
+    StructType,
 )
 
 

@@ -8,10 +8,11 @@ This gives you observability:
 - Row count trends over time (regression detection)
 """
 
-import uuid
 import time
+import uuid
 from datetime import datetime
-from pyspark.sql import SparkSession, Row
+
+from pyspark.sql import Row, SparkSession
 
 from src.config.settings import PipelineConfig
 from src.utils.helpers import get_logger

@@ -6,9 +6,16 @@ Business question: "Which categories are growing? Which are declining?"
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import (
-    col, year, month, quarter, date_format,
-    sum as spark_sum, avg, count, countDistinct,
-    round as spark_round, when,
+    avg,
+    col,
+    countDistinct,
+    date_format,
+    month,
+    quarter,
+    round as spark_round,
+    sum as spark_sum,
+    when,
+    year,
 )
 
 
@@ -45,7 +52,7 @@ def compute_revenue_kpis(df_silver: DataFrame) -> DataFrame:
             countDistinct("customer_unique_id").alias("unique_customers"),
             spark_round(avg("actual_delivery_days"), 2).alias("avg_delivery_days"),
             spark_sum(
-                when(col("is_late_delivery") == True, 1).otherwise(0)
+                when(col("is_late_delivery"), 1).otherwise(0)
             ).alias("late_order_count"),
         )
         .withColumn("late_delivery_rate",

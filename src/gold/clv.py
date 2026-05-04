@@ -6,10 +6,16 @@ Business question: "How much is each customer worth? Who are our VIPs?"
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import (
-    col, when, lit, datediff,
-    sum as spark_sum, avg, count, countDistinct,
+    avg,
+    col,
+    countDistinct,
+    datediff,
+    lit,
+    max as spark_max,
+    min as spark_min,
     round as spark_round,
-    min as spark_min, max as spark_max,
+    sum as spark_sum,
+    when,
 )
 
 
@@ -40,7 +46,7 @@ def compute_clv(df_silver: DataFrame) -> DataFrame:
 
             # Quality
             spark_sum(
-                when(col("is_late_delivery") == True, 1).otherwise(0)
+                when(col("is_late_delivery"), 1).otherwise(0)
             ).alias("late_deliveries_received"),
         )
         # Customer tenure

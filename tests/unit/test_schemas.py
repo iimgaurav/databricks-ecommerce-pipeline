@@ -3,9 +3,14 @@ Unit Tests — Schema definitions.
 """
 
 from src.config.schemas import (
-    ORDERS_SCHEMA, ORDER_ITEMS_SCHEMA, CUSTOMERS_SCHEMA,
-    PRODUCTS_SCHEMA, PAYMENTS_SCHEMA,
-    get_schema, get_source_file, BRONZE_SCHEMAS,
+    BRONZE_SCHEMAS,
+    CUSTOMERS_SCHEMA,
+    ORDER_ITEMS_SCHEMA,
+    ORDERS_SCHEMA,
+    PAYMENTS_SCHEMA,
+    PRODUCTS_SCHEMA,
+    get_schema,
+    get_source_file,
 )
 
 

@@ -12,12 +12,23 @@ No side effects, no spark.sql() inside transformations.
 This makes every function independently testable.
 """
 
-from pyspark.sql import SparkSession, DataFrame
+from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql.functions import (
-    col, to_timestamp, when, lit, trim, upper,
-    datediff, round as spark_round,
-    count, sum as spark_sum, avg, max as spark_max,
-    row_number, rank, current_timestamp, coalesce,
+    coalesce,
+    col,
+    count,
+    current_timestamp,
+    datediff,
+    lit,
+    rank,
+    round as spark_round,
+    row_number,
+    sum as spark_sum,
+    max as spark_max,
+    to_timestamp,
+    trim,
+    upper,
+    when,
 )
 from pyspark.sql.window import Window
 

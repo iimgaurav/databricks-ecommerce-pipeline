@@ -53,7 +53,7 @@ name: CI Pipeline — Lint, Test, Build
 on:
   # Run on every Pull Request to the main branch
   pull_request:
-    branches: [main]
+    branches: [ main ]
     paths:
       # Only run when Python/config files change (skip docs-only changes)
       - "src/**"
@@ -65,7 +65,7 @@ on:
   # Also run when code is pushed directly to main
   # (e.g., after a PR is merged)
   push:
-    branches: [main]
+    branches: [ main ]
 
 # ─── JOBS ───
 # Jobs are independent units of work that run in parallel by default.
@@ -86,7 +86,7 @@ jobs:
   #       on LOGIC, not formatting.
   lint:
     name: 🔍 Lint & Format Check
-    runs-on: ubuntu-latest    # GitHub provides a fresh Ubuntu VM
+    runs-on: ubuntu-latest # GitHub provides a fresh Ubuntu VM
 
     steps:
       # Step 1: Download your code into the VM
@@ -95,12 +95,12 @@ jobs:
         # This clones your repo into the VM. Without this,
         # the VM is empty — it doesn't have your code.
 
-      # Step 2: Install Python
+        # Step 2: Install Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip"    # Cache pip packages to speed up future runs
+          cache: "pip" # Cache pip packages to speed up future runs
 
       # Step 3: Install the linter
       - name: Install ruff
@@ -130,9 +130,9 @@ jobs:
   # NEEDS: lint must pass first. Why waste time testing
   #        code that doesn't even pass basic style checks?
   test:
-    name: 🧪 Unit Tests
+    name: Unit Tests
     runs-on: ubuntu-latest
-    needs: lint    # ← Run AFTER lint passes
+    needs: lint # ← Run AFTER lint passes
 
     steps:
       - name: Checkout code
@@ -171,10 +171,10 @@ jobs:
         # --cov=src     = measure code coverage of the src/ package
         # --cov-report  = output formats for coverage data
 
-      # Upload coverage report as an artifact
-      # This lets you download the coverage report from the GitHub UI
+        # Upload coverage report as an artifact
+        # This lets you download the coverage report from the GitHub UI
       - name: Upload coverage report
-        if: always()    # Upload even if tests fail
+        if: always() # Upload even if tests fail
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
@@ -196,7 +196,7 @@ jobs:
   build:
     name: 📦 Build Package
     runs-on: ubuntu-latest
-    needs: test    # ← Run AFTER tests pass
+    needs: test # ← Run AFTER tests pass
 
     steps:
       - name: Checkout code
@@ -219,4 +219,4 @@ jobs:
         with:
           name: pipeline-wheel
           path: dist/*.whl
-          retention-days: 30    # Keep for 30 days
+          retention-days: 30 # Keep for 30 days

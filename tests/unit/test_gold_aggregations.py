@@ -4,10 +4,10 @@ Unit Tests — Gold Layer Aggregations.
 
 import pytest
 from pyspark.sql import Row
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, to_timestamp
 
-from src.gold.revenue import compute_revenue_kpis
 from src.gold.clv import compute_clv
+from src.gold.revenue import compute_revenue_kpis
 from src.gold.seller_scorecard import compute_seller_scorecard
 
 
@@ -64,8 +64,6 @@ def silver_master(spark):
     ]
 
     df = spark.createDataFrame(data)
-    # Cast timestamp strings to timestamps
-    from pyspark.sql.functions import to_timestamp
     return (
         df
         .withColumn("order_purchase_timestamp",
@@ -83,8 +81,8 @@ class TestRevenueKPIs:
         """Revenue KPIs should only include DELIVERED orders."""
         result = compute_revenue_kpis(silver_master)
         # ORD003 is CANCELED → should not appear
-        statuses = [r.order_status for r in
-                    silver_master.filter(col("order_status") == "DELIVERED").collect()]
+        delivered = silver_master.filter(col("order_status") == "DELIVERED")
+        assert delivered.count() > 0
         assert result.count() > 0
         # All result rows come from DELIVERED orders only
 

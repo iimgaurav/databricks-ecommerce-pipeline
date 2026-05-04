@@ -6,9 +6,14 @@ Business question: "Which sellers perform best? Who needs attention?"
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import (
-    col, when, lit, count,
-    sum as spark_sum, avg, countDistinct,
+    avg,
+    col,
+    count,
+    countDistinct,
+    lit,
     round as spark_round,
+    sum as spark_sum,
+    when,
 )
 
 
@@ -31,7 +36,7 @@ def compute_seller_scorecard(df_silver: DataFrame) -> DataFrame:
             countDistinct("product_category_name").alias("category_count"),
             spark_round(avg("actual_delivery_days"), 2).alias("avg_delivery_days"),
             spark_round(
-                spark_sum(when(col("is_late_delivery") == True, 1).otherwise(0))
+                spark_sum(when(col("is_late_delivery"), 1).otherwise(0))
                 / count("*") * 100, 2
             ).alias("late_delivery_pct"),
         )

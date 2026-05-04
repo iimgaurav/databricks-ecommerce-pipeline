@@ -40,7 +40,7 @@ def spark():
 @pytest.fixture
 def sample_orders(spark):
     """Create a small orders DataFrame for testing."""
-    from pyspark.sql.types import StructType, StructField, StringType
+    from pyspark.sql.types import StringType, StructField, StructType
 
     data = [
         ("ORD001", "CUST001", "delivered", "2018-06-01 10:00:00", "2018-06-01 11:00:00",
@@ -73,7 +73,7 @@ def sample_orders(spark):
 def sample_order_items(spark):
     """Create a small order items DataFrame for testing."""
     from pyspark.sql.types import (
-        StructType, StructField, StringType, IntegerType, DoubleType
+        DoubleType, IntegerType, StringType, StructField, StructType,
     )
 
     data = [
@@ -101,7 +101,7 @@ def sample_order_items(spark):
 @pytest.fixture
 def sample_customers(spark):
     """Create a small customers DataFrame for testing."""
-    from pyspark.sql.types import StructType, StructField, StringType
+    from pyspark.sql.types import StringType, StructField, StructType
 
     data = [
         ("CUST001", "UNIQUE001", "01310", "sao paulo", "sp"),
@@ -125,7 +125,7 @@ def sample_customers(spark):
 def sample_payments(spark):
     """Create a small payments DataFrame for testing."""
     from pyspark.sql.types import (
-        StructType, StructField, StringType, IntegerType, DoubleType
+        DoubleType, IntegerType, StringType, StructField, StructType,
     )
 
     data = [

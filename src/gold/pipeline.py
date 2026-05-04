@@ -5,10 +5,10 @@ Gold Pipeline Runner — Orchestrates all Gold KPI computations.
 from pyspark.sql import SparkSession
 
 from src.config.settings import PipelineConfig
-from src.gold.revenue import compute_revenue_kpis
-from src.gold.clv import compute_clv
-from src.gold.seller_scorecard import compute_seller_scorecard
 from src.gold.category_trend import compute_category_trend
+from src.gold.clv import compute_clv
+from src.gold.revenue import compute_revenue_kpis
+from src.gold.seller_scorecard import compute_seller_scorecard
 from src.utils.helpers import get_logger
 
 logger = get_logger(__name__)

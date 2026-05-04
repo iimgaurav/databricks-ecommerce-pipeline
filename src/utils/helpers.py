@@ -4,9 +4,10 @@ Utility functions — Audit columns, logging, Spark helpers.
 These are small, reusable functions used across all pipeline layers.
 """
 
+import logging
+
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import current_timestamp, lit
-import logging
 
 
 # ──────────────────────────────────────────────────────────

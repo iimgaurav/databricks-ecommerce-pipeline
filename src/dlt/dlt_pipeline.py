@@ -14,9 +14,17 @@ DLT provides:
 
 import dlt
 from pyspark.sql.functions import (
-    col, to_timestamp, upper, trim, current_timestamp,
-    when, lit, round as spark_round,
-    sum as spark_sum, avg, countDistinct,
+    avg,
+    col,
+    countDistinct,
+    current_timestamp,
+    lit,
+    round as spark_round,
+    sum as spark_sum,
+    to_timestamp,
+    trim,
+    upper,
+    when,
 )
 
 VOLUME_PATH = "/Volumes/brazilian-ecommerce/filestore/olis/"
@@ -33,7 +41,7 @@ VOLUME_PATH = "/Volumes/brazilian-ecommerce/filestore/olis/"
 )
 def bronze_orders():
     return (
-        spark.read
+        spark.read  # noqa: F821  — `spark` is a DLT runtime global
         .format("csv")
         .option("header", "true")
         .option("inferSchema", "true")
@@ -50,7 +58,7 @@ def bronze_orders():
 )
 def bronze_order_items():
     return (
-        spark.read
+        spark.read  # noqa: F821  — `spark` is a DLT runtime global
         .format("csv")
         .option("header", "true")
         .option("inferSchema", "true")

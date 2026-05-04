@@ -15,10 +15,10 @@ This module uses a dataclass-based config loaded from YAML files.
 Each environment (dev/staging/prod) has its own YAML.
 """
 
-from dataclasses import dataclass, field
-from typing import Optional
-import yaml
 import os
+from dataclasses import dataclass, field
+
+import yaml
 
 
 @dataclass
@@ -84,7 +84,7 @@ class PipelineConfig:
         return self.table(self.gold_schema, name)
 
 
-def load_config(environment: Optional[str] = None) -> PipelineConfig:
+def load_config(environment: str | None = None) -> PipelineConfig:
     """
     Load configuration for the specified environment.
 
@@ -103,7 +103,7 @@ def load_config(environment: Optional[str] = None) -> PipelineConfig:
     config_file = os.path.join(config_dir, f"{env}.yaml")
 
     if os.path.exists(config_file):
-        with open(config_file, "r") as f:
+        with open(config_file) as f:
             raw = yaml.safe_load(f) or {}
         return PipelineConfig(environment=env, **raw)
     else:
