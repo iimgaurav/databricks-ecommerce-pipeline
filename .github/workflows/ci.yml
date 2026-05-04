@@ -145,11 +145,12 @@ jobs:
           cache: "pip"
 
       # Install Java — PySpark needs a JVM to run
+      # PySpark 3.5+ requires Java 17 (Java 11 causes JAVA_GATEWAY_EXITED)
       - name: Set up Java (required for PySpark)
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
-          java-version: "11"
+          java-version: "17"
 
       # Install all project dependencies
       - name: Install dependencies
