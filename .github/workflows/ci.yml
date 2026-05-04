@@ -1,36 +1,25 @@
-# ════════════════════════════════════════════════════════════════
-# CI PIPELINE — Continuous Integration
-# ════════════════════════════════════════════════════════════════
+# CI PIPELINE - Continuous Integration
 #
-# ┌──────────────────────────────────────────────────────────────┐
-# │              WHAT IS CI/CD? A COMPLETE EXPLANATION           │
-# ├──────────────────────────────────────────────────────────────┤
-# │                                                              │
-# │  CI/CD = Continuous Integration + Continuous Delivery        │
-# │                                                              │
-# │  Think of it as an AUTOMATIC QUALITY GATE:                   │
-# │                                                              │
-# │  WITHOUT CI/CD (current state):                              │
-# │    Developer writes code → pushes to GitHub → DONE           │
-# │    Problems: No one checks if it works. Bugs reach prod.     │
-# │                                                              │
-# │  WITH CI/CD:                                                 │
-# │    Developer writes code                                     │
-# │       → pushes to GitHub                                     │
-# │       → GitHub Actions AUTOMATICALLY runs:                   │
-# │           1. Linting (is the code style correct?)            │
-# │           2. Type checking (are types consistent?)           │
-# │           3. Unit tests (does the logic work?)               │
-# │           4. Build (can it be packaged?)                     │
-# │       → If ANY step fails, the PR is BLOCKED                │
-# │       → Only clean, tested code gets merged                  │
-# │       → After merge, CD deploys to staging/prod              │
-# │                                                              │
-# │  REAL-WORLD ANALOGY:                                         │
-# │    CI = quality inspector on a factory assembly line          │
-# │    CD = the delivery truck that ships finished products      │
-# │                                                              │
-# └──────────────────────────────────────────────────────────────┘
+# WHAT IS CI/CD?
+#
+# CI/CD = Continuous Integration + Continuous Delivery
+#
+# Think of it as an AUTOMATIC QUALITY GATE:
+#
+# WITHOUT CI/CD:
+#   Developer writes code -> pushes to GitHub -> DONE
+#   Problems: No one checks if it works. Bugs reach prod.
+#
+# WITH CI/CD:
+#   Developer writes code
+#     -> pushes to GitHub
+#     -> GitHub Actions AUTOMATICALLY runs:
+#         1. Linting (is the code style correct?)
+#         2. Unit tests (does the logic work?)
+#         3. Build (can it be packaged?)
+#     -> If ANY step fails, the PR is BLOCKED
+#     -> Only clean, tested code gets merged
+#     -> After merge, CD deploys to staging/prod
 #
 # HOW THIS FILE WORKS:
 #
@@ -43,17 +32,16 @@
 # Each "step" within a job runs a command.
 #
 # The flow is:
-#   PR opened → lint → test → build → report ✅ or ❌
-# ════════════════════════════════════════════════════════════════
+#   PR opened -> lint -> test -> build -> report pass or fail
 
-name: CI Pipeline — Lint, Test, Build
+name: CI Pipeline - Lint, Test, Build
 
-# ─── TRIGGERS ───
+# --- TRIGGERS ---
 # "When should this pipeline run?"
 on:
   # Run on every Pull Request to the main branch
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       # Only run when Python/config files change (skip docs-only changes)
       - "src/**"
@@ -65,16 +53,16 @@ on:
   # Also run when code is pushed directly to main
   # (e.g., after a PR is merged)
   push:
-    branches: [ main ]
+    branches: [main]
 
-# ─── JOBS ───
+# --- JOBS ---
 # Jobs are independent units of work that run in parallel by default.
 # We use `needs:` to create dependencies (sequential execution).
 jobs:
 
-  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  # JOB 1: LINT — Is the code style correct?
-  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # ----------------------------------------
+  # JOB 1: LINT - Is the code style correct?
+  # ----------------------------------------
   # Linting catches:
   #   - Unused imports
   #   - Undefined variables
@@ -86,21 +74,19 @@ jobs:
   #       on LOGIC, not formatting.
   lint:
     name: Lint & Format Check
-    runs-on: ubuntu-latest # GitHub provides a fresh Ubuntu VM
+    runs-on: ubuntu-latest
 
     steps:
       # Step 1: Download your code into the VM
       - name: Checkout code
         uses: actions/checkout@v4
-        # This clones your repo into the VM. Without this,
-        # the VM is empty — it doesn't have your code.
 
-        # Step 2: Install Python
+      # Step 2: Install Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-          cache: "pip" # Cache pip packages to speed up future runs
+          cache: "pip"
 
       # Step 3: Install the linter
       - name: Install ruff
@@ -117,9 +103,9 @@ jobs:
           echo "=== Checking code formatting ==="
           ruff format --check src/ tests/
 
-  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  # JOB 2: TEST — Does the code actually work?
-  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # ----------------------------------------
+  # JOB 2: TEST - Does the code actually work?
+  # ----------------------------------------
   # This is the most important job.
   # It runs pytest with your unit tests to verify:
   #   - Transformations produce correct output
@@ -132,7 +118,7 @@ jobs:
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
-    needs: lint # ← Run AFTER lint passes
+    needs: lint
 
     steps:
       - name: Checkout code
@@ -144,7 +130,7 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      # Install Java — PySpark needs a JVM to run
+      # Install Java - PySpark needs a JVM to run
       # PySpark 3.5+ requires Java 17 (Java 11 causes JAVA_GATEWAY_EXITED)
       - name: Set up Java (required for PySpark)
         uses: actions/setup-java@v4
@@ -172,18 +158,18 @@ jobs:
         # --cov=src     = measure code coverage of the src/ package
         # --cov-report  = output formats for coverage data
 
-        # Upload coverage report as an artifact
-        # This lets you download the coverage report from the GitHub UI
+      # Upload coverage report as an artifact
+      # This lets you download the coverage report from the GitHub UI
       - name: Upload coverage report
-        if: always() # Upload even if tests fail
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage.xml
 
-  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  # JOB 3: BUILD — Can it be packaged?
-  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # ----------------------------------------
+  # JOB 3: BUILD - Can it be packaged?
+  # ----------------------------------------
   # This job builds a Python wheel (.whl) package from src/.
   #
   # WHY BUILD A WHEEL?
@@ -197,7 +183,7 @@ jobs:
   build:
     name: Build Package
     runs-on: ubuntu-latest
-    needs: test # ← Run AFTER tests pass
+    needs: test
 
     steps:
       - name: Checkout code
@@ -220,4 +206,4 @@ jobs:
         with:
           name: pipeline-wheel
           path: dist/*.whl
-          retention-days: 30 # Keep for 30 days
+          retention-days: 30
