@@ -32,20 +32,16 @@ def compute_revenue_kpis(df_silver: DataFrame) -> DataFrame:
     """
     # Add time dimensions
     df = (
-        df_silver
-        .withColumn("order_year", year(col("order_purchase_timestamp")))
+        df_silver.withColumn("order_year", year(col("order_purchase_timestamp")))
         .withColumn("order_month", month(col("order_purchase_timestamp")))
         .withColumn("order_quarter", quarter(col("order_purchase_timestamp")))
-        .withColumn("order_month_str",
-                    date_format(col("order_purchase_timestamp"), "yyyy-MM"))
+        .withColumn("order_month_str", date_format(col("order_purchase_timestamp"), "yyyy-MM"))
     )
 
     return (
-        df
-        .filter(col("order_status") == "DELIVERED")
+        df.filter(col("order_status") == "DELIVERED")
         .groupBy(
-            "order_year", "order_month", "order_month_str",
-            "order_quarter", "product_category_name"
+            "order_year", "order_month", "order_month_str", "order_quarter", "product_category_name"
         )
         .agg(
             spark_round(spark_sum("line_total"), 2).alias("total_revenue"),
@@ -55,13 +51,15 @@ def compute_revenue_kpis(df_silver: DataFrame) -> DataFrame:
             countDistinct("order_id").alias("total_orders"),
             countDistinct("customer_unique_id").alias("unique_customers"),
             spark_round(avg("actual_delivery_days"), 2).alias("avg_delivery_days"),
-            spark_sum(
-                when(col("is_late_delivery"), 1).otherwise(0)
-            ).alias("late_order_count"),
+            spark_sum(when(col("is_late_delivery"), 1).otherwise(0)).alias("late_order_count"),
         )
-        .withColumn("late_delivery_rate",
-                    spark_round(col("late_order_count") / col("total_orders") * 100, 2))
-        .withColumn("freight_as_pct_revenue",
-                    spark_round(col("total_freight") / col("total_revenue") * 100, 2))
+        .withColumn(
+            "late_delivery_rate",
+            spark_round(col("late_order_count") / col("total_orders") * 100, 2),
+        )
+        .withColumn(
+            "freight_as_pct_revenue",
+            spark_round(col("total_freight") / col("total_revenue") * 100, 2),
+        )
         .orderBy("order_year", "order_month", col("total_revenue").desc())
     )

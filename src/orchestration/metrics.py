@@ -91,15 +91,19 @@ class MetricsCollector:
 
     def _write_metric(self, duration: float, status: str, error_message: str):
         """Write a single metric row to the Delta metrics table."""
-        metric_row = self.spark.createDataFrame([Row(
-            run_id=self.run_id,
-            run_date=self.run_date,
-            task_name=self.task_name,
-            rows_read=int(self.rows_read),
-            rows_written=int(self.rows_written),
-            duration_secs=round(duration, 2),
-            status=status,
-            error_message=error_message[:500],  # truncate long errors
-            recorded_at=datetime.utcnow(),
-        )])
+        metric_row = self.spark.createDataFrame(
+            [
+                Row(
+                    run_id=self.run_id,
+                    run_date=self.run_date,
+                    task_name=self.task_name,
+                    rows_read=int(self.rows_read),
+                    rows_written=int(self.rows_written),
+                    duration_secs=round(duration, 2),
+                    status=status,
+                    error_message=error_message[:500],  # truncate long errors
+                    recorded_at=datetime.utcnow(),
+                )
+            ]
+        )
         metric_row.write.format("delta").mode("append").saveAsTable(self._metrics_table)

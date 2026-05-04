@@ -47,8 +47,7 @@ def read_csv(
     logger.info(f"Reading CSV: {full_path}")
 
     df = (
-        spark.read
-        .format("csv")
+        spark.read.format("csv")
         .option("header", "true")
         .option("nullValue", "NA")
         .option("emptyValue", None)
@@ -80,8 +79,7 @@ def write_bronze_table(
     logger.info(f"Writing Bronze table: {full_table}")
 
     (
-        df.write
-        .format("delta")
+        df.write.format("delta")
         .mode(config.bronze_write_mode)
         .option("overwriteSchema", "true")
         .saveAsTable(full_table)

@@ -13,6 +13,7 @@ from pyspark.sql.functions import current_timestamp, lit
 # STRUCTURED LOGGING
 # ──────────────────────────────────────────────────────────
 
+
 def get_logger(name: str, level: str = "INFO") -> logging.Logger:
     """
     Create a structured logger.
@@ -25,8 +26,7 @@ def get_logger(name: str, level: str = "INFO") -> logging.Logger:
     if not logger.handlers:
         handler = logging.StreamHandler()
         formatter = logging.Formatter(
-            "%(asctime)s | %(name)s | %(levelname)s | %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S"
+            "%(asctime)s | %(name)s | %(levelname)s | %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
         )
         handler.setFormatter(formatter)
         logger.addHandler(handler)
@@ -37,6 +37,7 @@ def get_logger(name: str, level: str = "INFO") -> logging.Logger:
 # ──────────────────────────────────────────────────────────
 # AUDIT COLUMNS
 # ──────────────────────────────────────────────────────────
+
 
 def add_audit_columns(df: DataFrame, source_name: str, layer: str = "bronze") -> DataFrame:
     """
@@ -50,8 +51,7 @@ def add_audit_columns(df: DataFrame, source_name: str, layer: str = "bronze") ->
     These are mandatory for debugging data quality issues.
     """
     return (
-        df
-        .withColumn("_ingested_at", current_timestamp())
+        df.withColumn("_ingested_at", current_timestamp())
         .withColumn("_source_file", lit(source_name))
         .withColumn("_layer", lit(layer))
     )

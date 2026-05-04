@@ -80,8 +80,9 @@ class TestCleanOrders:
         result = clean_orders(df)
 
         ts_field = result.schema["order_purchase_timestamp"]
-        assert ts_field.dataType == TimestampType(), \
+        assert ts_field.dataType == TimestampType(), (
             "order_purchase_timestamp should be TimestampType"
+        )
 
     def test_output_row_count(self, spark, sample_orders):
         """
@@ -109,6 +110,7 @@ class TestCleanOrderItems:
         result = clean_order_items(df)
 
         from pyspark.sql.functions import col
+
         bad_prices = result.filter(col("price") <= 0).count()
         assert bad_prices == 0
 
@@ -117,13 +119,16 @@ class TestCleanOrderItems:
         df = add_audit_columns(sample_order_items, "test.csv", "bronze")
         result = clean_order_items(df)
 
-        first_row = result.filter(result.order_id == "ORD001").filter(
-            result.order_item_id == 1
-        ).collect()[0]
+        first_row = (
+            result.filter(result.order_id == "ORD001")
+            .filter(result.order_item_id == 1)
+            .collect()[0]
+        )
 
         expected = round(150.00 + 20.00, 2)
-        assert first_row.line_total == expected, \
+        assert first_row.line_total == expected, (
             f"line_total should be {expected}, got {first_row.line_total}"
+        )
 
 
 class TestCleanCustomers:

@@ -37,22 +37,22 @@ class PipelineConfig:
     volume_path: str = "/Volumes/brazilian-ecommerce-dev/filestore/olis/"
 
     # ── Feature flags ──
-    enable_cdf: bool = True              # Change Data Feed
-    enable_autoloader: bool = False       # Use Auto Loader instead of batch CSV
-    enable_scd2: bool = True              # SCD Type 2 tracking
+    enable_cdf: bool = True  # Change Data Feed
+    enable_autoloader: bool = False  # Use Auto Loader instead of batch CSV
+    enable_scd2: bool = True  # SCD Type 2 tracking
 
     # ── Write behaviour ──
     bronze_write_mode: str = "overwrite"  # "overwrite" for dev, "merge" for prod
-    optimize_after_write: bool = True     # Run OPTIMIZE after each write
+    optimize_after_write: bool = True  # Run OPTIMIZE after each write
 
     # ── Delta maintenance ──
-    vacuum_retention_hours: int = 168     # 7 days (never go below in prod)
+    vacuum_retention_hours: int = 168  # 7 days (never go below in prod)
     zorder_columns_silver: list = field(
         default_factory=lambda: ["order_purchase_timestamp", "product_category_name"]
     )
 
     # ── Monitoring ──
-    min_row_threshold: int = 100          # Circuit breaker minimum
+    min_row_threshold: int = 100  # Circuit breaker minimum
     alert_email: str = ""
     log_level: str = "INFO"
 

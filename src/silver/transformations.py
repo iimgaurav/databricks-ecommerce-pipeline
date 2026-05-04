@@ -49,6 +49,7 @@ logger = get_logger(__name__)
 # Each is pure: DataFrame → DataFrame (testable in isolation)
 # ──────────────────────────────────────────────────────────
 
+
 def clean_orders(df: DataFrame) -> DataFrame:
     """
     Clean the orders table:
@@ -60,33 +61,44 @@ def clean_orders(df: DataFrame) -> DataFrame:
     """
     return (
         drop_audit_columns(df)
-
         # Cast timestamps
-        .withColumn("order_purchase_timestamp",
-                    to_timestamp(col("order_purchase_timestamp"), "yyyy-MM-dd HH:mm:ss"))
-        .withColumn("order_approved_at",
-                    to_timestamp(col("order_approved_at"), "yyyy-MM-dd HH:mm:ss"))
-        .withColumn("order_delivered_carrier_date",
-                    to_timestamp(col("order_delivered_carrier_date"), "yyyy-MM-dd HH:mm:ss"))
-        .withColumn("order_delivered_customer_date",
-                    to_timestamp(col("order_delivered_customer_date"), "yyyy-MM-dd HH:mm:ss"))
-        .withColumn("order_estimated_delivery_date",
-                    to_timestamp(col("order_estimated_delivery_date"), "yyyy-MM-dd HH:mm:ss"))
-
+        .withColumn(
+            "order_purchase_timestamp",
+            to_timestamp(col("order_purchase_timestamp"), "yyyy-MM-dd HH:mm:ss"),
+        )
+        .withColumn(
+            "order_approved_at", to_timestamp(col("order_approved_at"), "yyyy-MM-dd HH:mm:ss")
+        )
+        .withColumn(
+            "order_delivered_carrier_date",
+            to_timestamp(col("order_delivered_carrier_date"), "yyyy-MM-dd HH:mm:ss"),
+        )
+        .withColumn(
+            "order_delivered_customer_date",
+            to_timestamp(col("order_delivered_customer_date"), "yyyy-MM-dd HH:mm:ss"),
+        )
+        .withColumn(
+            "order_estimated_delivery_date",
+            to_timestamp(col("order_estimated_delivery_date"), "yyyy-MM-dd HH:mm:ss"),
+        )
         # Derived delivery metrics
-        .withColumn("actual_delivery_days",
-                    datediff(col("order_delivered_customer_date"),
-                             col("order_purchase_timestamp")))
-        .withColumn("estimated_delivery_days",
-                    datediff(col("order_estimated_delivery_date"),
-                             col("order_purchase_timestamp")))
-        .withColumn("is_late_delivery",
-                    when(col("order_delivered_customer_date") > col("order_estimated_delivery_date"),
-                         lit(True)).otherwise(lit(False)))
-
+        .withColumn(
+            "actual_delivery_days",
+            datediff(col("order_delivered_customer_date"), col("order_purchase_timestamp")),
+        )
+        .withColumn(
+            "estimated_delivery_days",
+            datediff(col("order_estimated_delivery_date"), col("order_purchase_timestamp")),
+        )
+        .withColumn(
+            "is_late_delivery",
+            when(
+                col("order_delivered_customer_date") > col("order_estimated_delivery_date"),
+                lit(True),
+            ).otherwise(lit(False)),
+        )
         # Standardise
         .withColumn("order_status", upper(trim(col("order_status"))))
-
         # Data quality — PK must exist, no duplicates
         .filter(col("order_id").isNotNull())
         .dropDuplicates(["order_id"])
@@ -97,10 +109,10 @@ def clean_order_items(df: DataFrame) -> DataFrame:
     """Clean order items: cast timestamps, compute line_total, filter invalid prices."""
     return (
         drop_audit_columns(df)
-        .withColumn("shipping_limit_date",
-                    to_timestamp(col("shipping_limit_date"), "yyyy-MM-dd HH:mm:ss"))
-        .withColumn("line_total",
-                    spark_round(col("price") + col("freight_value"), 2))
+        .withColumn(
+            "shipping_limit_date", to_timestamp(col("shipping_limit_date"), "yyyy-MM-dd HH:mm:ss")
+        )
+        .withColumn("line_total", spark_round(col("price") + col("freight_value"), 2))
         .filter(col("price").isNotNull() & (col("price") > 0))
         .dropDuplicates(["order_id", "order_item_id"])  # composite PK
     )
@@ -121,8 +133,7 @@ def clean_products(df: DataFrame) -> DataFrame:
     """Clean products: fill missing categories, filter null PKs, dedup."""
     return (
         drop_audit_columns(df)
-        .withColumn("product_category_name",
-                    coalesce(col("product_category_name"), lit("unknown")))
+        .withColumn("product_category_name", coalesce(col("product_category_name"), lit("unknown")))
         .filter(col("product_id").isNotNull())
         .dropDuplicates(["product_id"])
     )
@@ -149,6 +160,7 @@ def aggregate_payments(df: DataFrame) -> DataFrame:
 # MASTER TABLE BUILD — Join all cleaned tables
 # ──────────────────────────────────────────────────────────
 
+
 def build_master_table(
     df_orders: DataFrame,
     df_items: DataFrame,
@@ -167,12 +179,10 @@ def build_master_table(
     """
     return (
         df_items.alias("i")
-
         .join(df_orders.alias("o"), on="order_id", how="inner")
         .join(df_customers.alias("c"), on="customer_id", how="left")
         .join(df_products.alias("p"), on="product_id", how="left")
         .join(df_payments_agg.alias("pay"), on="order_id", how="left")
-
         .select(
             # Order identifiers
             col("order_id"),
@@ -180,33 +190,27 @@ def build_master_table(
             col("order_status"),
             col("order_purchase_timestamp"),
             col("order_delivered_customer_date"),
-
             # Delivery metrics
             col("actual_delivery_days"),
             col("estimated_delivery_days"),
             col("is_late_delivery"),
-
             # Item financials
             col("i.product_id"),
             col("i.seller_id"),
             col("i.price"),
             col("i.freight_value"),
             col("i.line_total"),
-
             # Customer
             col("customer_id"),
             col("c.customer_unique_id"),
             col("c.customer_city"),
             col("c.customer_state"),
-
             # Product
             col("p.product_category_name"),
             col("p.product_weight_g"),
-
             # Payment
             col("pay.total_payment_value"),
             col("pay.max_installments"),
-
             # Silver audit
             current_timestamp().alias("_silver_processed_at"),
         )
@@ -217,6 +221,7 @@ def build_master_table(
 # WINDOW FUNCTION ENRICHMENT
 # ──────────────────────────────────────────────────────────
 
+
 def enrich_with_windows(df: DataFrame) -> DataFrame:
     """
     Add window-function-based columns:
@@ -224,20 +229,16 @@ def enrich_with_windows(df: DataFrame) -> DataFrame:
     - is_repeat_customer: True if rank > 1
     - price_rank_in_category: rank of this item's price within its category
     """
-    w_customer = (
-        Window.partitionBy("customer_unique_id")
-        .orderBy(col("order_purchase_timestamp").asc())
+    w_customer = Window.partitionBy("customer_unique_id").orderBy(
+        col("order_purchase_timestamp").asc()
     )
-    w_category = (
-        Window.partitionBy("product_category_name")
-        .orderBy(col("line_total").desc())
-    )
+    w_category = Window.partitionBy("product_category_name").orderBy(col("line_total").desc())
 
     return (
-        df
-        .withColumn("customer_order_rank", row_number().over(w_customer))
-        .withColumn("is_repeat_customer",
-                    when(col("customer_order_rank") > 1, True).otherwise(False))
+        df.withColumn("customer_order_rank", row_number().over(w_customer))
+        .withColumn(
+            "is_repeat_customer", when(col("customer_order_rank") > 1, True).otherwise(False)
+        )
         .withColumn("price_rank_in_category", rank().over(w_category))
     )
 
@@ -245,6 +246,7 @@ def enrich_with_windows(df: DataFrame) -> DataFrame:
 # ──────────────────────────────────────────────────────────
 # ORCHESTRATOR — Runs the full Silver pipeline
 # ──────────────────────────────────────────────────────────
+
 
 def run_silver_pipeline(spark: SparkSession, config: PipelineConfig) -> int:
     """
@@ -263,25 +265,24 @@ def run_silver_pipeline(spark: SparkSession, config: PipelineConfig) -> int:
 
     # Read Bronze tables
     logger.info("Reading Bronze tables...")
-    df_orders    = spark.table(config.bronze_table("orders"))
-    df_items     = spark.table(config.bronze_table("order_items"))
+    df_orders = spark.table(config.bronze_table("orders"))
+    df_items = spark.table(config.bronze_table("order_items"))
     df_customers = spark.table(config.bronze_table("customers"))
-    df_products  = spark.table(config.bronze_table("products"))
-    df_payments  = spark.table(config.bronze_table("payments"))
+    df_products = spark.table(config.bronze_table("products"))
+    df_payments = spark.table(config.bronze_table("payments"))
 
     # Clean each table
     logger.info("Cleaning tables...")
-    orders_clean    = clean_orders(df_orders)
-    items_clean     = clean_order_items(df_items)
+    orders_clean = clean_orders(df_orders)
+    items_clean = clean_order_items(df_items)
     customers_clean = clean_customers(df_customers)
-    products_clean  = clean_products(df_products)
-    payments_agg    = aggregate_payments(df_payments)
+    products_clean = clean_products(df_products)
+    payments_agg = aggregate_payments(df_payments)
 
     # Build master table
     logger.info("Building master table...")
     master = build_master_table(
-        orders_clean, items_clean, customers_clean,
-        products_clean, payments_agg
+        orders_clean, items_clean, customers_clean, products_clean, payments_agg
     )
 
     # Enrich with window functions
@@ -293,8 +294,7 @@ def run_silver_pipeline(spark: SparkSession, config: PipelineConfig) -> int:
     logger.info(f"Writing Silver table: {silver_table}")
 
     (
-        enriched.write
-        .format("delta")
+        enriched.write.format("delta")
         .mode("overwrite")
         .option("overwriteSchema", "true")
         .partitionBy("customer_state")

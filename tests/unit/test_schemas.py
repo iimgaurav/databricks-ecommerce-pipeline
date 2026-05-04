@@ -15,7 +15,6 @@ from src.config.schemas import (
 
 
 class TestSchemaDefinitions:
-
     def test_orders_schema_field_count(self):
         """Orders schema should have 8 fields."""
         assert len(ORDERS_SCHEMA.fields) == 8
@@ -41,6 +40,7 @@ class TestSchemaDefinitions:
     def test_get_schema_invalid(self):
         """get_schema should raise for unknown table names."""
         import pytest
+
         with pytest.raises(ValueError, match="Unknown table"):
             get_schema("nonexistent_table")
 
@@ -56,15 +56,16 @@ class TestSchemaDefinitions:
 
 
 class TestSchemaTypes:
-
     def test_orders_has_order_id_string(self):
         """order_id should be StringType."""
         from pyspark.sql.types import StringType
+
         field = ORDERS_SCHEMA["order_id"]
         assert field.dataType == StringType()
 
     def test_order_items_price_is_double(self):
         """price field should be DoubleType."""
         from pyspark.sql.types import DoubleType
+
         field = ORDER_ITEMS_SCHEMA["price"]
         assert field.dataType == DoubleType()

@@ -48,10 +48,10 @@ def run_gold_pipeline(spark: SparkSession, config: PipelineConfig) -> dict:
 
     # ── Write Gold tables ──
     gold_tables = {
-        "revenue_by_category_monthly": (df_revenue,  "order_year"),
-        "customer_lifetime_value":     (df_clv,      "customer_state"),
-        "seller_performance":          (df_sellers,  None),
-        "category_mom_trend":          (df_trend,    "order_year"),
+        "revenue_by_category_monthly": (df_revenue, "order_year"),
+        "customer_lifetime_value": (df_clv, "customer_state"),
+        "seller_performance": (df_sellers, None),
+        "category_mom_trend": (df_trend, "order_year"),
     }
 
     results = {}
@@ -59,12 +59,7 @@ def run_gold_pipeline(spark: SparkSession, config: PipelineConfig) -> dict:
         full_table = config.gold_table(table_name)
         logger.info(f"Writing Gold table: {full_table}")
 
-        writer = (
-            df.write
-            .format("delta")
-            .mode("overwrite")
-            .option("overwriteSchema", "true")
-        )
+        writer = df.write.format("delta").mode("overwrite").option("overwriteSchema", "true")
         if partition_col:
             writer = writer.partitionBy(partition_col)
 
