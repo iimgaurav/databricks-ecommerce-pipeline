@@ -85,7 +85,7 @@ jobs:
   #       Catching style issues in CI means reviewers can focus
   #       on LOGIC, not formatting.
   lint:
-    name: 🔍 Lint & Format Check
+    name: Lint & Format Check
     runs-on: ubuntu-latest # GitHub provides a fresh Ubuntu VM
 
     steps:
@@ -195,7 +195,7 @@ jobs:
   #
   # The wheel is saved as an artifact for the CD pipeline to deploy.
   build:
-    name: 📦 Build Package
+    name: Build Package
     runs-on: ubuntu-latest
     needs: test # ← Run AFTER tests pass
 
