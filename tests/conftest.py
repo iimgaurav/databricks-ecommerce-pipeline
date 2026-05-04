@@ -7,8 +7,8 @@ This conftest.py creates a local SparkSession that all tests share.
 Tests create small DataFrames in memory → run transformations → assert results.
 """
 
-from pyspark.sql import SparkSession
 import pytest
+from pyspark.sql import SparkSession
 
 
 @pytest.fixture(scope="session")
@@ -73,7 +73,11 @@ def sample_orders(spark):
 def sample_order_items(spark):
     """Create a small order items DataFrame for testing."""
     from pyspark.sql.types import (
-        DoubleType, IntegerType, StringType, StructField, StructType,
+        DoubleType,
+        IntegerType,
+        StringType,
+        StructField,
+        StructType,
     )
 
     data = [
@@ -125,7 +129,11 @@ def sample_customers(spark):
 def sample_payments(spark):
     """Create a small payments DataFrame for testing."""
     from pyspark.sql.types import (
-        DoubleType, IntegerType, StringType, StructField, StructType,
+        DoubleType,
+        IntegerType,
+        StringType,
+        StructField,
+        StructType,
     )
 
     data = [

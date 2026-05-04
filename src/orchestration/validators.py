@@ -18,7 +18,8 @@ With validators, you FAIL FAST and alert the on-call engineer.
 from datetime import datetime
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, max as spark_max
+from pyspark.sql.functions import col
+from pyspark.sql.functions import max as spark_max
 
 from src.config.settings import PipelineConfig
 from src.utils.helpers import get_logger

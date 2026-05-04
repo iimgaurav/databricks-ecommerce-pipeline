@@ -12,20 +12,25 @@ DLT provides:
 - Pipeline-level observability (event log)
 """
 
-import dlt
 from pyspark.sql.functions import (
     avg,
     col,
     countDistinct,
     current_timestamp,
     lit,
-    round as spark_round,
-    sum as spark_sum,
     to_timestamp,
     trim,
     upper,
     when,
 )
+from pyspark.sql.functions import (
+    round as spark_round,
+)
+from pyspark.sql.functions import (
+    sum as spark_sum,
+)
+
+import dlt
 
 VOLUME_PATH = "/Volumes/brazilian-ecommerce/filestore/olis/"
 

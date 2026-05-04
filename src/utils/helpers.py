@@ -9,7 +9,6 @@ import logging
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import current_timestamp, lit
 
-
 # ──────────────────────────────────────────────────────────
 # STRUCTURED LOGGING
 # ──────────────────────────────────────────────────────────
