@@ -7,8 +7,8 @@ This conftest.py creates a local SparkSession that all tests share.
 Tests create small DataFrames in memory → run transformations → assert results.
 """
 
-import pytest
 from pyspark.sql import SparkSession
+import pytest
 
 
 @pytest.fixture(scope="session")

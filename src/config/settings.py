@@ -15,8 +15,8 @@ This module uses a dataclass-based config loaded from YAML files.
 Each environment (dev/staging/prod) has its own YAML.
 """
 
-import os
 from dataclasses import dataclass, field
+import os
 
 import yaml
 
