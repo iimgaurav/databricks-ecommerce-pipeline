@@ -1,6 +1,4 @@
-# ════════════════════════════════════════════════════════════════
-# DATABRICKS ASSET BUNDLES (DABs) — Bundle Configuration
-# ════════════════════════════════════════════════════════════════
+# DATABRICKS ASSET BUNDLES (DABs) - Bundle Configuration
 #
 # WHAT IS THIS FILE?
 #
@@ -11,15 +9,13 @@
 #   - HOW to configure it (cluster size, schedule, permissions)
 #
 # Think of it like a Dockerfile, but for Databricks:
-#   Dockerfile → describes how to build a container
-#   databricks.yml → describes how to deploy a pipeline
-#
-# ════════════════════════════════════════════════════════════════
+#   Dockerfile -> describes how to build a container
+#   databricks.yml -> describes how to deploy a pipeline
 
 bundle:
   name: ecommerce-pipeline
 
-# ─── ARTIFACTS ───
+# --- ARTIFACTS ---
 # Package your src/ code as a Python wheel.
 # This wheel gets installed on the cluster automatically.
 artifacts:
@@ -27,11 +23,11 @@ artifacts:
     type: whl
     path: .   # Build from the project root (uses pyproject.toml)
 
-# ─── RESOURCES ───
+# --- RESOURCES ---
 # Define the Databricks resources to create/manage.
 resources:
 
-  # ── Databricks Workflow (Job) ──
+  # Databricks Workflow (Job)
   # This creates a multi-task DAG in the Databricks Jobs UI.
   jobs:
     ecommerce_pipeline:
@@ -50,7 +46,7 @@ resources:
       max_retries: 2
       retry_on_timeout: true
 
-      # ── Task definitions ──
+      # Task definitions
       # Tasks run in dependency order (like an Airflow DAG)
       tasks:
         # Task 1: Bronze Ingestion
@@ -87,7 +83,7 @@ resources:
             - whl: ./dist/*.whl
           job_cluster_key: pipeline_cluster
 
-      # ── Cluster configuration ──
+      # Cluster configuration
       job_clusters:
         - job_cluster_key: pipeline_cluster
           new_cluster:
@@ -97,7 +93,7 @@ resources:
             spark_conf:
               spark.sql.shuffle.partitions: "auto"
 
-  # ── DLT Pipeline ──
+  # DLT Pipeline
   pipelines:
     dlt_ecommerce:
       name: "dlt_ecommerce_${bundle.target}"
@@ -107,7 +103,7 @@ resources:
         - notebook:
             path: ./src/dlt/dlt_pipeline.py
 
-# ─── VARIABLES ───
+# --- VARIABLES ---
 # Defaults that can be overridden per environment
 variables:
   catalog:
@@ -119,24 +115,25 @@ variables:
   num_workers:
     default: 0
 
-# ─── TARGETS (Environments) ───
+# --- TARGETS (Environments) ---
 # Each target overrides variables for its environment.
 # Deploy with: `databricks bundle deploy -t <target>`
+#
+# NOTE: workspace.host is NOT set here because DABs does not support
+# variable interpolation for authentication fields. Instead, set the
+# DATABRICKS_HOST environment variable before running `databricks bundle`.
+# The CD pipeline (cd.yml) handles this via GitHub Secrets.
 targets:
 
   dev:
     mode: development    # development mode = personal workspace copy
     default: true
-    workspace:
-      host: ${var.databricks_host}
     variables:
       catalog: "brazilian-ecommerce-dev"
       num_workers: 0     # Single-node for dev (cheap)
       alert_email: ""
 
   staging:
-    workspace:
-      host: ${var.databricks_host}
     variables:
       catalog: "brazilian-ecommerce-staging"
       num_workers: 1     # Small cluster for staging
@@ -144,8 +141,6 @@ targets:
       node_type_id: "i3.xlarge"
 
   prod:
-    workspace:
-      host: ${var.databricks_host}
     variables:
       catalog: "brazilian-ecommerce"
       num_workers: 2     # Production-sized cluster
