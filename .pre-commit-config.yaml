@@ -1,0 +1,44 @@
+# ════════════════════════════════════════════════════════════════
+# Pre-commit Hooks — Automatic checks before every git commit
+# ════════════════════════════════════════════════════════════════
+#
+# WHAT ARE PRE-COMMIT HOOKS?
+# They run automatically BEFORE you commit code.
+# If any hook fails, the commit is BLOCKED.
+#
+# This catches problems even before you push to GitHub.
+# Think of it as "CI on your local machine".
+#
+# SETUP (one-time):
+#   pip install pre-commit
+#   pre-commit install
+#
+# After that, every `git commit` runs these checks automatically.
+# ════════════════════════════════════════════════════════════════
+
+repos:
+  # Ruff — linting + formatting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.8
+    hooks:
+      - id: ruff          # Lint
+        args: [--fix]
+      - id: ruff-format   # Format
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace     # Remove trailing spaces
+      - id: end-of-file-fixer       # Ensure files end with newline
+      - id: check-yaml               # Validate YAML syntax
+      - id: check-added-large-files  # Block files > 500KB
+        args: [--maxkb=500]
+      - id: check-merge-conflict     # Detect unresolved merge conflicts
+
+  # Detect secrets (API keys, tokens accidentally committed)
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]

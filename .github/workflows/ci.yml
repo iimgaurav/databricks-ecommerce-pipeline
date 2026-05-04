@@ -1,0 +1,222 @@
+# ════════════════════════════════════════════════════════════════
+# CI PIPELINE — Continuous Integration
+# ════════════════════════════════════════════════════════════════
+#
+# ┌──────────────────────────────────────────────────────────────┐
+# │              WHAT IS CI/CD? A COMPLETE EXPLANATION           │
+# ├──────────────────────────────────────────────────────────────┤
+# │                                                              │
+# │  CI/CD = Continuous Integration + Continuous Delivery        │
+# │                                                              │
+# │  Think of it as an AUTOMATIC QUALITY GATE:                   │
+# │                                                              │
+# │  WITHOUT CI/CD (current state):                              │
+# │    Developer writes code → pushes to GitHub → DONE           │
+# │    Problems: No one checks if it works. Bugs reach prod.     │
+# │                                                              │
+# │  WITH CI/CD:                                                 │
+# │    Developer writes code                                     │
+# │       → pushes to GitHub                                     │
+# │       → GitHub Actions AUTOMATICALLY runs:                   │
+# │           1. Linting (is the code style correct?)            │
+# │           2. Type checking (are types consistent?)           │
+# │           3. Unit tests (does the logic work?)               │
+# │           4. Build (can it be packaged?)                     │
+# │       → If ANY step fails, the PR is BLOCKED                │
+# │       → Only clean, tested code gets merged                  │
+# │       → After merge, CD deploys to staging/prod              │
+# │                                                              │
+# │  REAL-WORLD ANALOGY:                                         │
+# │    CI = quality inspector on a factory assembly line          │
+# │    CD = the delivery truck that ships finished products      │
+# │                                                              │
+# └──────────────────────────────────────────────────────────────┘
+#
+# HOW THIS FILE WORKS:
+#
+# This is a GitHub Actions workflow file. GitHub reads this YAML
+# from .github/workflows/ and runs it automatically when you:
+#   - Open a Pull Request
+#   - Push commits to a PR
+#
+# Each "job" runs on a fresh virtual machine (Ubuntu).
+# Each "step" within a job runs a command.
+#
+# The flow is:
+#   PR opened → lint → test → build → report ✅ or ❌
+# ════════════════════════════════════════════════════════════════
+
+name: CI Pipeline — Lint, Test, Build
+
+# ─── TRIGGERS ───
+# "When should this pipeline run?"
+on:
+  # Run on every Pull Request to the main branch
+  pull_request:
+    branches: [main]
+    paths:
+      # Only run when Python/config files change (skip docs-only changes)
+      - "src/**"
+      - "tests/**"
+      - "notebooks/**"
+      - "pyproject.toml"
+      - "requirements.txt"
+
+  # Also run when code is pushed directly to main
+  # (e.g., after a PR is merged)
+  push:
+    branches: [main]
+
+# ─── JOBS ───
+# Jobs are independent units of work that run in parallel by default.
+# We use `needs:` to create dependencies (sequential execution).
+jobs:
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # JOB 1: LINT — Is the code style correct?
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Linting catches:
+  #   - Unused imports
+  #   - Undefined variables
+  #   - Inconsistent formatting
+  #   - Common Python anti-patterns
+  #
+  # WHY: Consistent code is easier to review and maintain.
+  #       Catching style issues in CI means reviewers can focus
+  #       on LOGIC, not formatting.
+  lint:
+    name: 🔍 Lint & Format Check
+    runs-on: ubuntu-latest    # GitHub provides a fresh Ubuntu VM
+
+    steps:
+      # Step 1: Download your code into the VM
+      - name: Checkout code
+        uses: actions/checkout@v4
+        # This clones your repo into the VM. Without this,
+        # the VM is empty — it doesn't have your code.
+
+      # Step 2: Install Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"    # Cache pip packages to speed up future runs
+
+      # Step 3: Install the linter
+      - name: Install ruff
+        run: pip install ruff
+
+      # Step 4: Run the linter
+      # ruff check = find problems
+      # ruff format --check = verify formatting (don't auto-fix)
+      - name: Run ruff linter
+        run: |
+          echo "=== Checking for code issues ==="
+          ruff check src/ tests/ --output-format=github
+
+          echo "=== Checking code formatting ==="
+          ruff format --check src/ tests/
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # JOB 2: TEST — Does the code actually work?
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # This is the most important job.
+  # It runs pytest with your unit tests to verify:
+  #   - Transformations produce correct output
+  #   - Edge cases (nulls, duplicates) are handled
+  #   - Schemas are correct
+  #   - KPI calculations are accurate
+  #
+  # NEEDS: lint must pass first. Why waste time testing
+  #        code that doesn't even pass basic style checks?
+  test:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint    # ← Run AFTER lint passes
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      # Install Java — PySpark needs a JVM to run
+      - name: Set up Java (required for PySpark)
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "11"
+
+      # Install all project dependencies
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+
+      # Run tests with coverage reporting
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/ \
+            -v \
+            --tb=short \
+            --cov=src \
+            --cov-report=term-missing \
+            --cov-report=xml
+        # -v            = verbose output (see each test name)
+        # --tb=short    = short tracebacks on failure
+        # --cov=src     = measure code coverage of the src/ package
+        # --cov-report  = output formats for coverage data
+
+      # Upload coverage report as an artifact
+      # This lets you download the coverage report from the GitHub UI
+      - name: Upload coverage report
+        if: always()    # Upload even if tests fail
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # JOB 3: BUILD — Can it be packaged?
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # This job builds a Python wheel (.whl) package from src/.
+  #
+  # WHY BUILD A WHEEL?
+  # In Databricks, you can install a wheel on the cluster.
+  # This means:
+  #   - Your src/ modules are importable without sys.path hacks
+  #   - Version-controlled: wheel v1.0.0 is different from v1.0.1
+  #   - Reproducible: same wheel = same behaviour
+  #
+  # The wheel is saved as an artifact for the CD pipeline to deploy.
+  build:
+    name: 📦 Build Package
+    runs-on: ubuntu-latest
+    needs: test    # ← Run AFTER tests pass
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Build wheel
+        run: python -m build --wheel --outdir dist/
+
+      # Save the built wheel so the CD pipeline can use it
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-wheel
+          path: dist/*.whl
+          retention-days: 30    # Keep for 30 days

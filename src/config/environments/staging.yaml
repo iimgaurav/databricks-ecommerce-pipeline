@@ -1,0 +1,18 @@
+# Staging environment — mirrors prod but with test data
+# Used by CI/CD to validate before deploying to prod
+
+catalog: "brazilian-ecommerce-staging"
+volume_path: "/Volumes/brazilian-ecommerce-staging/filestore/olis/"
+
+bronze_write_mode: "merge"
+optimize_after_write: true
+
+vacuum_retention_hours: 168
+min_row_threshold: 100
+
+enable_autoloader: true
+enable_cdf: true
+enable_scd2: true
+
+log_level: "INFO"
+alert_email: "staging-alerts@yourcompany.com"

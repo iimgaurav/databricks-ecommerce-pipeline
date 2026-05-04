@@ -1,0 +1,219 @@
+# ════════════════════════════════════════════════════════════════
+# CD PIPELINE — Continuous Delivery / Deployment
+# ════════════════════════════════════════════════════════════════
+#
+# ┌──────────────────────────────────────────────────────────────┐
+# │         CI vs CD — WHAT'S THE DIFFERENCE?                    │
+# ├──────────────────────────────────────────────────────────────┤
+# │                                                              │
+# │  CI (ci.yml) answers: "Does this code WORK?"                 │
+# │    → Runs on every PR                                        │
+# │    → Lints, tests, builds                                    │
+# │    → Blocks bad code from being merged                       │
+# │                                                              │
+# │  CD (this file) answers: "How do we SHIP it?"                │
+# │    → Runs AFTER code is merged to main                       │
+# │    → Deploys to staging first (safe)                         │
+# │    → Requires manual approval for production                 │
+# │    → Uses Databricks Asset Bundles (DABs) for deployment     │
+# │                                                              │
+# │  THE DEPLOYMENT FLOW:                                        │
+# │                                                              │
+# │   PR merged to main                                          │
+# │        │                                                     │
+# │        ▼                                                     │
+# │   ┌─────────────┐                                           │
+# │   │ Build wheel │  (package the code)                       │
+# │   └──────┬──────┘                                           │
+# │          │                                                   │
+# │          ▼                                                   │
+# │   ┌─────────────────────┐                                   │
+# │   │ Deploy to STAGING   │  (automatic)                      │
+# │   │ → databricks bundle │                                   │
+# │   │   deploy -t staging │                                   │
+# │   └──────┬──────────────┘                                   │
+# │          │                                                   │
+# │          ▼                                                   │
+# │   ┌─────────────────────┐                                   │
+# │   │ Run smoke tests     │  (quick validation)               │
+# │   │ on staging          │                                   │
+# │   └──────┬──────────────┘                                   │
+# │          │                                                   │
+# │          ▼                                                   │
+# │   ┌─────────────────────┐                                   │
+# │   │ MANUAL APPROVAL     │  ← Human reviews staging results  │
+# │   │ (GitHub Environment)│                                   │
+# │   └──────┬──────────────┘                                   │
+# │          │                                                   │
+# │          ▼                                                   │
+# │   ┌─────────────────────┐                                   │
+# │   │ Deploy to PROD      │  (after approval)                 │
+# │   │ → databricks bundle │                                   │
+# │   │   deploy -t prod    │                                   │
+# │   └─────────────────────┘                                   │
+# │                                                              │
+# └──────────────────────────────────────────────────────────────┘
+#
+# WHAT IS DATABRICKS ASSET BUNDLES (DABs)?
+#
+# DABs is a CLI tool that deploys your:
+#   - Notebooks → to the Databricks workspace
+#   - Python wheel → installed on the cluster
+#   - Workflow definitions → creates/updates jobs
+#   - DLT pipelines → creates/updates DLT pipelines
+#
+# Think of it as "Terraform for Databricks" — you define your
+# infrastructure as YAML files, and DABs creates/updates it.
+#
+# ════════════════════════════════════════════════════════════════
+
+name: CD Pipeline — Deploy to Staging & Production
+
+on:
+  # Only run when code is pushed to main (i.e., after PR merge)
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "notebooks/**"
+      - "databricks/**"
+      - "pyproject.toml"
+
+# ─── ENVIRONMENT VARIABLES ───
+# These are used across all jobs.
+# Sensitive values (tokens) come from GitHub Secrets.
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # JOB 1: BUILD — Package the code
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  build:
+    name: 📦 Build Wheel
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Build wheel
+        run: |
+          pip install build
+          python -m build --wheel --outdir dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-wheel
+          path: dist/*.whl
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # JOB 2: DEPLOY TO STAGING
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # This deploys automatically after build.
+  # No manual approval needed for staging.
+  #
+  # HOW IT WORKS:
+  # 1. Install the Databricks CLI
+  # 2. Authenticate using a token (stored in GitHub Secrets)
+  # 3. Run `databricks bundle deploy -t staging`
+  # 4. This uploads notebooks, installs the wheel, creates/updates the workflow
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    # GitHub Environments let you set protection rules (like required reviewers)
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # Download the wheel built in the previous job
+      - uses: actions/download-artifact@v4
+        with:
+          name: pipeline-wheel
+          path: dist/
+
+      # Install the Databricks CLI (which includes the `bundle` command)
+      - name: Install Databricks CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
+      # Configure authentication
+      # The DATABRICKS_TOKEN is stored as a GitHub Secret
+      # (Settings → Secrets → Actions → New repository secret)
+      #
+      # NEVER put tokens in code. NEVER. GitHub Secrets encrypts them.
+      - name: Configure Databricks auth
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_STAGING_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_STAGING_TOKEN }}
+        run: |
+          echo "Deploying to staging workspace: $DATABRICKS_HOST"
+          databricks bundle validate -t staging
+          databricks bundle deploy -t staging
+
+      # Run the staging workflow to verify deployment
+      - name: Run staging smoke test
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_STAGING_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_STAGING_TOKEN }}
+        run: |
+          echo "Triggering staging pipeline run..."
+          databricks bundle run ecommerce_pipeline -t staging --no-wait
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # JOB 3: DEPLOY TO PRODUCTION
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # THIS JOB REQUIRES MANUAL APPROVAL.
+  #
+  # In GitHub: Settings → Environments → "production"
+  # → Add "Required reviewers" → select yourself or your team lead
+  #
+  # After staging deploys and smoke tests pass, GitHub will
+  # show a "Review deployments" button. A human must click
+  # "Approve" before this job runs.
+  #
+  # WHY MANUAL APPROVAL?
+  # Production affects real users and real data. You want a
+  # human to verify staging looks good before deploying.
+  deploy-production:
+    name: 🏭 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    # The "production" environment MUST have "Required reviewers" enabled
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: pipeline-wheel
+          path: dist/
+
+      - name: Install Databricks CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
+      - name: Deploy to Production
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_PROD_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_PROD_TOKEN }}
+        run: |
+          echo "⚠️  Deploying to PRODUCTION: $DATABRICKS_HOST"
+          databricks bundle validate -t prod
+          databricks bundle deploy -t prod
+          echo "✅ Production deployment complete"

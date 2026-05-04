@@ -1,0 +1,20 @@
+# Development environment — safe to experiment
+# Uses a separate catalog so dev writes never touch staging/prod data
+
+catalog: "brazilian-ecommerce-dev"
+volume_path: "/Volumes/brazilian-ecommerce-dev/filestore/olis/"
+
+# In dev we overwrite everything for fast iteration
+bronze_write_mode: "overwrite"
+optimize_after_write: false          # skip for speed in dev
+
+# Relaxed thresholds
+vacuum_retention_hours: 168
+min_row_threshold: 10
+
+enable_autoloader: false
+enable_cdf: true
+enable_scd2: true
+
+log_level: "DEBUG"
+alert_email: ""

@@ -1,0 +1,20 @@
+# Production environment — strictest settings
+# NEVER write directly — deploy only through CI/CD pipeline
+
+catalog: "brazilian-ecommerce"
+volume_path: "/Volumes/brazilian-ecommerce/filestore/olis/"
+
+# In prod we MERGE (idempotent) — never overwrite entire tables
+bronze_write_mode: "merge"
+optimize_after_write: true
+
+# 7-day retention protects time travel; 30 days for extra safety
+vacuum_retention_hours: 720
+min_row_threshold: 1000
+
+enable_autoloader: true
+enable_cdf: true
+enable_scd2: true
+
+log_level: "WARNING"
+alert_email: "data-engineering-oncall@yourcompany.com"
